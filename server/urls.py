@@ -15,19 +15,28 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path,include
+from django.urls import path, include
+from django.http import JsonResponse
 from App import views
 from rest_framework.routers import DefaultRouter
 from App.views import QuestionViewSet
 
+# Create a simple health check view
+def health_check(request):
+    return JsonResponse({
+        'status': 'healthy',
+        'message': 'CodeCraft Server is running!'
+    })
+
 router = DefaultRouter()
-router.register(r'', QuestionViewSet)  # Register your viewset
+router.register(r'questions', QuestionViewSet)  # Register your viewset with a proper prefix
 
 urlpatterns = [
+    path('', health_check, name='health_check'),  # Root endpoint for health checks
     path('admin/', admin.site.urls),
-    path('languages/', views.GetLanguagesView.as_view(), name='get_languages'),  # Updated to class-based view
-    path('compile/', views.CompileCodeView.as_view(), name='compile_code'),  # Updated to class-based view
-    path('hints/', views.GenerateHintsView.as_view(), name='generate_hints'),  # Updated to class-based view
-    path('askAI/', views.AskAIView.as_view(), name='ask_ai'),  # Updated to class-based view
-    path('', include(router.urls)),  # Register the Question API endpoint
+    path('api/languages/', views.GetLanguagesView.as_view(), name='get_languages'),
+    path('api/compile/', views.CompileCodeView.as_view(), name='compile_code'),
+    path('api/hints/', views.GenerateHintsView.as_view(), name='generate_hints'),
+    path('api/askAI/', views.AskAIView.as_view(), name='ask_ai'),
+    path('api/', include(router.urls)),  # Register the Question API endpoint under /api/
 ]

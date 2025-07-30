@@ -20,10 +20,10 @@ load_dotenv(dotenv_path)
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('django_key')
+SECRET_KEY = os.getenv('django_key', 'fallback-secret-key-for-development-only')
 
 # Set DEBUG based on the environment variable, defaulting to False if not set.
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 # Dynamic configuration based on DEBUG mode.
 if DEBUG:
@@ -35,22 +35,23 @@ if DEBUG:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-    STATIC_URL = 'static/'
+    STATIC_URL = '/static/'
+    STATICFILES_DIRS = [
+        BASE_DIR / "static",
+    ]
     # For local development, runserver handles static files, so no need for WhiteNoise.
     MIDDLEWARE_WHITENOISE = []
 else:
-    # Production settingsdj-database-url
-    ALLOWED_HOSTS = ['CodeCraft.onrender.com', '*']
+    # Production settings
+    ALLOWED_HOSTS = ['codecraft-server.onrender.com', '*']
     DATABASES = {
         'default': dj_database_url.config(default='sqlite:///db.sqlite3')
     }
+    STATIC_URL = '/static/'
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-    STATIC_URL = 'static/'
     # Append WhiteNoise middleware for serving static files in production.
     MIDDLEWARE_WHITENOISE = ['whitenoise.middleware.WhiteNoiseMiddleware']
-    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage' 
 
 # Application definition
 INSTALLED_APPS = [
@@ -68,13 +69,14 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+] + MIDDLEWARE_WHITENOISE + [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-] + MIDDLEWARE_WHITENOISE
+]
 
 ROOT_URLCONF = 'server.urls'
 
@@ -127,3 +129,25 @@ CORS_ALLOW_HEADERS = [
 CORS_EXPOSE_HEADERS = ['Content-Disposition']
 CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 CORS_PREFLIGHT_MAX_AGE = 86400
+
+# Logging configuration for better error tracking
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
